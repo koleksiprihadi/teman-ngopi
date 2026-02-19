@@ -1,13 +1,12 @@
+// src/lib/auth/authContext.js
 'use client';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import supabase from '@/lib/supabase/client';
 import db from '@/lib/dexie/db';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const supabase = getSupabaseClient(); // ← INI YANG KURANG
-
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,16 +14,18 @@ export function AuthProvider({ children }) {
   const fetchProfile = useCallback(async (authUser) => {
     if (!authUser) { setProfile(null); return; }
     try {
+      // Try local first
       const local = await db.users.where('email').equals(authUser.email).first();
       if (local) {
         setProfile(local);
         return;
       }
-
+      // Fetch from server
       const res = await fetch(`/api/users/me?email=${authUser.email}`);
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
+        // Cache locally
         await db.users.put({ ...data, serverId: data.id });
       }
     } catch (err) {
@@ -39,19 +40,17 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user);
-        } else {
-          setProfile(null);
-        }
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchProfile(session.user);
+      } else {
+        setProfile(null);
       }
-    );
+    });
 
     return () => listener.subscription.unsubscribe();
-  }, [fetchProfile, supabase]);
+  }, [fetchProfile]);
 
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });

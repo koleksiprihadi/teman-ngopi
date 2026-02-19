@@ -12,11 +12,10 @@ const NAV_ITEMS = [
   { href: '/owner/cashbook', icon: '💰', label: 'Buku Kas' },
   { href: '/owner/reports', icon: '📈', label: 'Laporan' },
   { href: '/owner/products', icon: '🍽️', label: 'Produk' },
+  { href: '/owner/categories', icon: '🏷️', label: 'Kategori' },
   { href: '/owner/users', icon: '👥', label: 'Kasir' },
   { href: '/owner/settings', icon: '⚙️', label: 'Pengaturan' },
 ];
-
-export const dynamic = "force-dynamic";
 
 export default function OwnerLayout({ children }) {
   const { user, profile, loading, signOut } = useAuth();

@@ -26,12 +26,26 @@ enum Role {
   KASIR
 }
 
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  icon      String    @default("🍽️")
+  color     String    @default("#8B4513")
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
 model Product {
   id               String            @id @default(uuid())
   name             String
   description      String?
   price            Float
   category         String
+  categoryId       String?
+  categoryRef      Category?         @relation(fields: [categoryId], references: [id])
   imageUrl         String?
   isAvailable      Boolean           @default(true)
   stock            Int?

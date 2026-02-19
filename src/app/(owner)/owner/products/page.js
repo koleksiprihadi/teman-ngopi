@@ -1,18 +1,25 @@
 // src/app/(owner)/owner/products/page.js
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { formatRupiah } from '@/utils/currency';
 import toast from 'react-hot-toast';
-
-const CATEGORIES = ['Kopi', 'Non-Kopi', 'Makanan', 'Snack', 'Minuman', 'Dessert'];
+import Link from 'next/link';
 
 export default function ProductsPage() {
   const { products, addProduct, updateProduct, deleteProduct } = useProducts();
+  const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState('all');
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setCategories(data.filter(c => c.isActive)))
+      .catch(() => {});
+  }, []);
 
   const filtered = (products || []).filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -34,9 +41,14 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="font-display text-2xl font-bold text-coffee-900">🍽️ Kelola Produk</h1>
-        <button onClick={handleNew} className="btn-primary flex items-center gap-2">
-          ➕ Tambah Produk
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/owner/categories" className="btn-secondary flex items-center gap-1.5 text-sm py-2 px-3">
+            🏷️ Kelola Kategori
+          </Link>
+          <button onClick={handleNew} className="btn-primary flex items-center gap-2">
+            ➕ Tambah Produk
+          </button>
+        </div>
       </div>
 
       {/* Filter */}
@@ -57,7 +69,9 @@ export default function ProductsPage() {
           className="input-field w-auto"
         >
           <option value="all">Semua Kategori</option>
-          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          {categories.map(c => (
+            <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+          ))}
         </select>
       </div>
 
@@ -87,6 +101,7 @@ export default function ProductsPage() {
       {showForm && (
         <ProductFormModal
           product={editProduct}
+          categories={categories}
           onClose={() => setShowForm(false)}
           onSave={async (data) => {
             if (editProduct) {
@@ -137,10 +152,10 @@ function ProductCard({ product, onEdit, onDelete, onToggleAvail }) {
   );
 }
 
-function ProductFormModal({ product, onClose, onSave }) {
+function ProductFormModal({ product, categories, onClose, onSave }) {
   const [form, setForm] = useState({
     name: product?.name || '',
-    category: product?.category || 'Kopi',
+    category: product?.category || (categories[0]?.name || ''),
     price: product?.price || '',
     cost: product?.cost || '',
     description: product?.description || '',
@@ -179,9 +194,18 @@ function ProductFormModal({ product, onClose, onSave }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-semibold text-coffee-700 block mb-1.5">Kategori</label>
-              <select value={form.category} onChange={e => setField('category', e.target.value)} className="input-field">
-                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-              </select>
+              {categories.length > 0 ? (
+                <select value={form.category} onChange={e => setField('category', e.target.value)} className="input-field">
+                  {categories.map(c => (
+                    <option key={c.id} value={c.name}>{c.icon} {c.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="input-field text-coffee-400 text-sm flex items-center gap-2">
+                  <span>Belum ada kategori</span>
+                  <Link href="/owner/categories" className="text-coffee-600 underline text-xs">Tambah →</Link>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-sm font-semibold text-coffee-700 block mb-1.5">Satuan</label>

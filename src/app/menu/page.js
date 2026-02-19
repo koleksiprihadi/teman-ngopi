@@ -3,24 +3,20 @@
 import { useState, useEffect, useMemo } from 'react';
 import { formatRupiah } from '@/utils/currency';
 
-const CATEGORY_ICONS = {
-  'Kopi': '☕',
-  'Non-Kopi': '🧃',
-  'Makanan': '🍱',
-  'Snack': '🍪',
-  'Minuman': '🥤',
-  'Dessert': '🍮',
-};
-
 export default function MenuPage() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts]       = useState([]);
+  const [apiCategories, setApiCategories] = useState([]);
+  const [loading, setLoading]         = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
-  const [search, setSearch] = useState('');
+  const [search, setSearch]           = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     fetchMenu();
+    fetch('/api/categories')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setApiCategories(data.filter(c => c.isActive)))
+      .catch(() => {});
   }, []);
 
   const fetchMenu = async () => {
@@ -37,9 +33,20 @@ export default function MenuPage() {
     }
   };
 
+  // Gunakan urutan dari API categories, fallback ke kategori dari produk
   const categories = useMemo(() => {
-    return ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
-  }, [products]);
+    if (apiCategories.length > 0) {
+      // Hanya tampilkan kategori yang punya produk
+      const productCats = new Set(products.map(p => p.category));
+      return apiCategories.filter(c => productCats.has(c.name));
+    }
+    return [...new Set(products.map(p => p.category).filter(Boolean))]
+      .map(name => ({ name, icon: '🍽️', color: '#8B4513' }));
+  }, [products, apiCategories]);
+
+  const getCategoryIcon = (catName) => {
+    return apiCategories.find(c => c.name === catName)?.icon || '🍽️';
+  };
 
   const filtered = useMemo(() => {
     let result = products;
@@ -81,18 +88,32 @@ export default function MenuPage() {
             />
           </div>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+            {/* Semua */}
+            <button
+              onClick={() => setActiveCategory('all')}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                activeCategory === 'all'
+                  ? 'bg-coffee-800 text-cream-100'
+                  : 'bg-coffee-100 text-coffee-700 hover:bg-coffee-200'
+              }`}
+            >
+              🍽️ Semua
+            </button>
+
+            {/* Kategori dinamis */}
             {categories.map(cat => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                  activeCategory === cat
-                    ? 'bg-coffee-800 text-cream-100'
-                    : 'bg-coffee-100 text-coffee-700 hover:bg-coffee-200'
-                }`}
+                key={cat.name}
+                onClick={() => setActiveCategory(cat.name)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border-2`}
+                style={
+                  activeCategory === cat.name
+                    ? { background: cat.color, borderColor: cat.color, color: 'white' }
+                    : { background: cat.color + '18', borderColor: cat.color + '55', color: cat.color }
+                }
               >
-                {cat !== 'all' && <span>{CATEGORY_ICONS[cat] || '📦'}</span>}
-                <span>{cat === 'all' ? '🍽️ Semua' : cat}</span>
+                <span>{cat.icon}</span>
+                <span>{cat.name}</span>
               </button>
             ))}
           </div>
@@ -115,14 +136,14 @@ export default function MenuPage() {
           <>
             {/* Category Sections */}
             {activeCategory === 'all' ? (
-              categories.filter(c => c !== 'all').map(cat => {
-                const catProducts = filtered.filter(p => p.category === cat);
+              categories.map(cat => {
+                const catProducts = filtered.filter(p => p.category === cat.name);
                 if (catProducts.length === 0) return null;
                 return (
-                  <section key={cat} className="mb-8">
+                  <section key={cat.name} className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
-                      <span className="text-2xl">{CATEGORY_ICONS[cat] || '📦'}</span>
-                      <h2 className="font-display text-xl font-bold text-coffee-900">{cat}</h2>
+                      <span className="text-2xl">{cat.icon}</span>
+                      <h2 className="font-display text-xl font-bold text-coffee-900">{cat.name}</h2>
                       <div className="flex-1 h-px bg-coffee-200" />
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -159,7 +180,7 @@ export default function MenuPage() {
                 <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-6xl">
-                  {CATEGORY_ICONS[selectedProduct.category] || '☕'}
+                  {getCategoryIcon(selectedProduct.category)}
                 </div>
               )}
               <button
@@ -212,7 +233,7 @@ function MenuCard({ product, onClick }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-coffee-100 to-coffee-200">
-            {CATEGORY_ICONS[product.category] || '☕'}
+            {getCategoryIcon(product.category)}
           </div>
         )}
       </div>

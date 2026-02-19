@@ -399,7 +399,29 @@ async function main() {
     }
   }
 
-  // ── 2. BUAT PRODUK ────────────────────────────────────────
+  // ── 2. BUAT KATEGORI ─────────────────────────────────────
+  console.log('\n🏷️  Membuat kategori produk...');
+
+  const DEFAULT_CATEGORIES = [
+    { name: 'Kopi',     icon: '☕', color: '#8B4513', sortOrder: 0 },
+    { name: 'Non-Kopi', icon: '🧃', color: '#059669', sortOrder: 1 },
+    { name: 'Makanan',  icon: '🍱', color: '#DC2626', sortOrder: 2 },
+    { name: 'Snack',    icon: '🍪', color: '#D97706', sortOrder: 3 },
+    { name: 'Dessert',  icon: '🍮', color: '#7C3AED', sortOrder: 4 },
+  ];
+
+  const categoryMap = {};
+  for (const catData of DEFAULT_CATEGORIES) {
+    const cat = await prisma.category.upsert({
+      where: { name: catData.name },
+      create: { ...catData, isActive: true },
+      update: { icon: catData.icon, color: catData.color, sortOrder: catData.sortOrder },
+    });
+    categoryMap[cat.name] = cat;
+    console.log(`   ✅ ${cat.icon} ${cat.name}`);
+  }
+
+  // ── 3. BUAT PRODUK ────────────────────────────────────────
   console.log('\n🍽️  Membuat data produk...');
 
   const createdProducts = [];
@@ -415,7 +437,13 @@ async function main() {
         continue;
       }
 
-      const product = await prisma.product.create({ data: productData });
+      const cat = categoryMap[productData.category];
+      const product = await prisma.product.create({
+        data: {
+          ...productData,
+          categoryId: cat?.id || null,
+        },
+      });
       console.log(`   ✅ ${product.category.padEnd(10)} | ${product.name.padEnd(25)} | Rp ${product.price.toLocaleString('id-ID')}`);
       createdProducts.push(product);
     } catch (err) {
@@ -423,7 +451,7 @@ async function main() {
     }
   }
 
-  // ── 3. APP SETTINGS ───────────────────────────────────────
+  // ── 4. APP SETTINGS ───────────────────────────────────────
   console.log('\n⚙️  Menyimpan pengaturan aplikasi...');
 
   for (const setting of APP_SETTINGS) {
@@ -435,7 +463,7 @@ async function main() {
   }
   console.log(`   ✅ ${APP_SETTINGS.length} pengaturan disimpan`);
 
-  // ── 4. SAMPLE BUKU KAS ────────────────────────────────────
+  // ── 5. SAMPLE BUKU KAS ────────────────────────────────────
   const owner = createdUsers.find(u => u.role === 'OWNER');
   if (owner) {
     console.log('\n📚 Membuat sample buku kas...');

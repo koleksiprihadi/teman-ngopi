@@ -1,6 +1,6 @@
 // src/app/(kasir)/kasir/page.js
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/lib/auth/authContext';
@@ -15,20 +15,19 @@ import PaymentModal from '@/components/pos/PaymentModal';
 import OpenBillModal from '@/components/pos/OpenBillModal';
 import CartItem from '@/components/pos/CartItem';
 
-const CATEGORIES_ICON = {
-  'all': '🍽️',
-  'Kopi': '☕',
-  'Non-Kopi': '🧃',
-  'Makanan': '🍱',
-  'Snack': '🍪',
-  'Minuman': '🥤',
-  'Dessert': '🍮',
-};
-
 export default function KasirPage() {
   const { user, profile } = useAuth();
   const { products, categories } = useProducts();
   const { items, subtotal, total, discount, setDiscount, addItem, removeItem, updateQuantity, clearCart, loadFromOpenBill, isEmpty, itemCount } = useCart();
+
+  // Kategori dinamis dari API
+  const [dynamicCategories, setDynamicCategories] = useState([]);
+  useEffect(() => {
+    fetch('/api/categories')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setDynamicCategories(data.filter(c => c.isActive)))
+      .catch(() => {});
+  }, []);
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -200,18 +199,37 @@ export default function KasirPage() {
 
         {/* Category tabs */}
         <div className="flex gap-2 px-3 py-2 overflow-x-auto scrollbar-hide bg-cream-50 border-b border-coffee-100 flex-shrink-0">
-          {categories.map(cat => (
+          {/* Tab "Semua" */}
+          <button
+            onClick={() => setActiveCategory('all')}
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              activeCategory === 'all'
+                ? 'bg-coffee-800 text-cream-100 shadow-coffee'
+                : 'bg-white text-coffee-700 border border-coffee-200 hover:border-coffee-400'
+            }`}
+          >
+            <span>🍽️</span>
+            <span>Semua</span>
+          </button>
+
+          {/* Tabs dinamis dari API */}
+          {dynamicCategories.map(cat => (
             <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                activeCategory === cat
-                  ? 'bg-coffee-800 text-cream-100 shadow-coffee'
-                  : 'bg-white text-coffee-700 border border-coffee-200 hover:border-coffee-400'
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.name)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border-2 ${
+                activeCategory === cat.name
+                  ? 'text-white shadow-sm'
+                  : 'bg-white hover:opacity-80'
               }`}
+              style={
+                activeCategory === cat.name
+                  ? { background: cat.color, borderColor: cat.color }
+                  : { borderColor: cat.color + '55', color: cat.color }
+              }
             >
-              <span>{CATEGORIES_ICON[cat] || '📦'}</span>
-              <span className="capitalize">{cat === 'all' ? 'Semua' : cat}</span>
+              <span>{cat.icon}</span>
+              <span>{cat.name}</span>
             </button>
           ))}
         </div>
@@ -244,6 +262,7 @@ export default function KasirPage() {
                     setActiveTab('cart');
                   }}
                   inCart={items.find(i => i.productId === (product.serverId || product.id))}
+                  categoryIcon={dynamicCategories.find(c => c.name === product.category)?.icon || '☕'}
                 />
               ))}
             </div>
@@ -345,7 +364,7 @@ export default function KasirPage() {
                 onClick={() => setShowCart(true)}
                 className="py-2.5 rounded-xl border-2 border-coffee-300 text-coffee-700 font-semibold text-sm hover:bg-coffee-50 transition-all active:scale-95"
               >
-                📋 Open Bill
+                📋 Gantung
               </button>
               <button
                 onClick={() => setShowPayment(true)}
@@ -417,7 +436,7 @@ export default function KasirPage() {
 }
 
 // Product Card Component
-function ProductCard({ product, onAdd, inCart }) {
+function ProductCard({ product, onAdd, inCart, categoryIcon }) {
   return (
     <button
       onClick={onAdd}
@@ -436,7 +455,7 @@ function ProductCard({ product, onAdd, inCart }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-coffee-100 to-coffee-200">
-            {CATEGORIES_ICON[product.category] || '☕'}
+            {categoryIcon || '☕'}
           </div>
         )}
         {inCart && (
