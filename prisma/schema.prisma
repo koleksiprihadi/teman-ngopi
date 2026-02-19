@@ -1,0 +1,205 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  name         String
+  role         Role          @default(KASIR)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+  cashBooks    CashBook[]
+  openBills    OpenBill[]
+}
+
+enum Role {
+  OWNER
+  KASIR
+}
+
+model Product {
+  id               String            @id @default(uuid())
+  name             String
+  description      String?
+  price            Float
+  category         String
+  imageUrl         String?
+  isAvailable      Boolean           @default(true)
+  stock            Int?
+  unit             String            @default("pcs")
+  cost             Float             @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  transactionItems TransactionItem[]
+  openBillItems    OpenBillItem[]
+}
+
+model Transaction {
+  id              String            @id @default(uuid())
+  invoiceNumber   String            @unique
+  cashierId       String
+  cashier         User              @relation(fields: [cashierId], references: [id])
+  cashBookId      String?
+  cashBook        CashBook?         @relation(fields: [cashBookId], references: [id])
+  subtotal        Float
+  tax             Float             @default(0)
+  discount        Float             @default(0)
+  total           Float
+  paymentMethod   PaymentMethod
+  amountPaid      Float
+  change          Float             @default(0)
+  status          TransactionStatus @default(COMPLETED)
+  isGantung       Boolean           @default(false)
+  notes           String?
+  items           TransactionItem[]
+  journals        AccountingJournal[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+enum PaymentMethod {
+  TUNAI
+  NON_TUNAI
+}
+
+enum TransactionStatus {
+  COMPLETED
+  GANTUNG
+  CANCELLED
+  PENDING
+}
+
+model TransactionItem {
+  id            String      @id @default(uuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+  productName   String
+  price         Float
+  quantity      Int
+  subtotal      Float
+  createdAt     DateTime    @default(now())
+}
+
+model OpenBill {
+  id          String         @id @default(uuid())
+  tableNumber String?
+  customerName String?
+  cashierId   String
+  cashier     User           @relation(fields: [cashierId], references: [id])
+  items       OpenBillItem[]
+  subtotal    Float
+  total       Float
+  notes       String?
+  status      OpenBillStatus @default(OPEN)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+enum OpenBillStatus {
+  OPEN
+  PAID
+  CANCELLED
+}
+
+model OpenBillItem {
+  id         String   @id @default(uuid())
+  openBillId String
+  openBill   OpenBill @relation(fields: [openBillId], references: [id])
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  productName String
+  price      Float
+  quantity   Int
+  subtotal   Float
+}
+
+model CashBook {
+  id               String        @id @default(uuid())
+  date             DateTime      @db.Date
+  ownerId          String
+  owner            User          @relation(fields: [ownerId], references: [id])
+  initialCapital   Float
+  totalCash        Float         @default(0)
+  totalNonCash     Float         @default(0)
+  totalExpenses    Float         @default(0)
+  finalBalance     Float         @default(0)
+  cutOffTime       String        @default("22:00")
+  isClosed         Boolean       @default(false)
+  closedAt         DateTime?
+  notes            String?
+  transactions     Transaction[]
+  expenses         Expense[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([date])
+}
+
+model Expense {
+  id          String    @id @default(uuid())
+  cashBookId  String
+  cashBook    CashBook  @relation(fields: [cashBookId], references: [id])
+  description String
+  amount      Float
+  category    String    @default("Operasional")
+  notes       String?
+  journals    AccountingJournal[]
+  createdAt   DateTime  @default(now())
+}
+
+model AccountingJournal {
+  id            String      @id @default(uuid())
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+  expenseId     String?
+  expense       Expense?    @relation(fields: [expenseId], references: [id])
+  date          DateTime
+  description   String
+  debitAccount  String
+  creditAccount String
+  amount        Float
+  createdAt     DateTime    @default(now())
+}
+
+model SyncLog {
+  id         String     @id @default(uuid())
+  entityType String
+  entityId   String
+  action     SyncAction
+  status     SyncStatus @default(PENDING)
+  payload    Json?
+  errorMsg   String?
+  attempts   Int        @default(0)
+  syncedAt   DateTime?
+  createdAt  DateTime   @default(now())
+}
+
+enum SyncAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+}
+
+model AppSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}

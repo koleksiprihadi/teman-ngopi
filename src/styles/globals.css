@@ -1,0 +1,138 @@
+/* src/styles/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+  
+  --coffee-900: #2C1810;
+  --coffee-800: #5C3317;
+  --coffee-600: #8B4513;
+  --coffee-400: #D2691E;
+  --coffee-100: #FAE9C8;
+  --cream: #FDF5E6;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  
+  body {
+    font-family: var(--font-body);
+    background-color: #FDF5E6;
+    color: var(--coffee-900);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #FAE9C8; }
+  ::-webkit-scrollbar-thumb { background: #D2691E; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #8B4513; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-coffee-800 hover:bg-coffee-900 text-cream-100 font-semibold px-4 py-2.5 rounded-xl 
+           transition-all duration-200 active:scale-95 shadow-coffee hover:shadow-coffee-lg
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  .btn-secondary {
+    @apply bg-cream-100 hover:bg-coffee-100 text-coffee-800 font-semibold px-4 py-2.5 rounded-xl 
+           border-2 border-coffee-200 hover:border-coffee-400 transition-all duration-200 active:scale-95;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl 
+           transition-all duration-200 active:scale-95;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-card p-4 border border-coffee-100/50;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200 cursor-pointer;
+  }
+
+  .input-field {
+    @apply w-full border-2 border-coffee-200 focus:border-coffee-600 rounded-xl px-3 py-2.5
+           bg-white text-coffee-900 placeholder-coffee-400 outline-none transition-all duration-200
+           text-sm font-medium;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .badge-green { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-amber { @apply badge bg-amber-100 text-amber-700; }
+  .badge-red { @apply badge bg-red-100 text-red-700; }
+  .badge-blue { @apply badge bg-blue-100 text-blue-700; }
+  .badge-coffee { @apply badge bg-coffee-100 text-coffee-800; }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200
+           text-white/70 hover:text-white hover:bg-white/15 cursor-pointer;
+  }
+
+  .sidebar-item.active {
+    @apply bg-white/20 text-white shadow-md;
+  }
+
+  .stat-card {
+    @apply bg-white rounded-2xl p-5 shadow-card border border-coffee-100/50 flex flex-col gap-2;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-top { padding-top: env(safe-area-inset-top); }
+}
+
+/* PWA Splash Screen */
+@media (display-mode: standalone) {
+  body { padding-top: env(safe-area-inset-top); }
+}
+
+/* Animations */
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+.animate-fade-in { animation: fadeIn 0.25s ease-out; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Print styles */
+@media print {
+  body * { visibility: hidden; }
+  #print-receipt, #print-receipt * { visibility: visible; }
+  #print-receipt { position: fixed; top: 0; left: 0; }
+}
