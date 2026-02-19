@@ -17,21 +17,23 @@ const nunito = Nunito({
   display: 'swap',
 });
 
+// Next.js 15+: viewport harus export terpisah
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#5C3317',
+};
+
 export const metadata = {
   title: 'Teman Ngopi POS',
   description: 'Sistem Point of Sale modern untuk Teman Ngopi',
   manifest: '/manifest.json',
-  themeColor: '#5C3317',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'Teman Ngopi',
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
   },
 };
 

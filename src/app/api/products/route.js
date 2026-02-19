@@ -1,22 +1,25 @@
 // src/app/api/products/route.js
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma/client';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-export async function GET(request) {
+export async function GET() {
   try {
+    const { prisma } = await import('@/lib/prisma/client');
     const products = await prisma.product.findMany({
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
     });
     return NextResponse.json(products);
   } catch (err) {
+    console.error('[products GET]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
+    const { prisma } = await import('@/lib/prisma/client');
     const body = await request.json();
     const product = await prisma.product.create({
       data: {
@@ -33,6 +36,7 @@ export async function POST(request) {
     });
     return NextResponse.json(product, { status: 201 });
   } catch (err) {
+    console.error('[products POST]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

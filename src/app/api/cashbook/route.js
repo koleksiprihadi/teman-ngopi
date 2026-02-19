@@ -1,11 +1,12 @@
 // src/app/api/cashbook/route.js
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma/client';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request) {
   try {
+    const { prisma } = await import('@/lib/prisma/client');
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
 
@@ -26,12 +27,14 @@ export async function GET(request) {
 
     return NextResponse.json(books);
   } catch (err) {
+    console.error('[cashbook GET]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
+    const { prisma } = await import('@/lib/prisma/client');
     const body = await request.json();
     const book = await prisma.cashBook.create({
       data: {
@@ -43,6 +46,7 @@ export async function POST(request) {
     });
     return NextResponse.json(book, { status: 201 });
   } catch (err) {
+    console.error('[cashbook POST]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

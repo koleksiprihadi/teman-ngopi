@@ -1,11 +1,12 @@
 // src/app/api/transactions/route.js
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma/client';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request) {
   try {
+    const { prisma } = await import('@/lib/prisma/client');
     const { searchParams } = new URL(request.url);
     const cashierId = searchParams.get('cashierId');
     const isGantung = searchParams.get('gantung') === 'true';
@@ -14,7 +15,6 @@ export async function GET(request) {
     const where = {};
     if (cashierId) where.cashierId = cashierId;
     if (isGantung) where.isGantung = true;
-
     if (date) {
       const start = new Date(date);
       const end = new Date(date);
@@ -31,6 +31,7 @@ export async function GET(request) {
 
     return NextResponse.json(transactions);
   } catch (err) {
+    console.error('[transactions GET]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
