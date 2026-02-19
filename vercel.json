@@ -2,5 +2,10 @@
   "buildCommand": "prisma generate && next build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["sin1"]
+  "regions": ["sin1"],
+  "env": {
+    "DATABASE_URL": "postgresql://postgres.lhugiieyintbpvfglyjr:dvnoubdjdbukdumsiwsm1@aws-1-ap-south-1.pooler.supabase.com:5432/postgres",
+    "DIRECT_URL": "postgresql://postgres.lhugiieyintbpvfglyjr:dvnoubdjdbukdumsiwsm1@aws-1-ap-south-1.pooler.supabase.com:5432/postgres",
+    "JWT_SECRET": "5e577f82e9e95d38f4638deb480afc8e28fca4778d0fd8e708c72de3ab28bb46"
+  }
 }
