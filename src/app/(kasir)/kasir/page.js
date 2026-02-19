@@ -364,7 +364,7 @@ export default function KasirPage() {
                 onClick={() => setShowCart(true)}
                 className="py-2.5 rounded-xl border-2 border-coffee-300 text-coffee-700 font-semibold text-sm hover:bg-coffee-50 transition-all active:scale-95"
               >
-                📋 Gantung
+                📋 Open Bill
               </button>
               <button
                 onClick={() => setShowPayment(true)}
