@@ -16,6 +16,8 @@ const NAV_ITEMS = [
   { href: '/owner/settings', icon: '⚙️', label: 'Pengaturan' },
 ];
 
+export const dynamic = "force-dynamic";
+
 export default function OwnerLayout({ children }) {
   const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
