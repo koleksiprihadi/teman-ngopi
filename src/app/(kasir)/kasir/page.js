@@ -5,7 +5,8 @@ import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/lib/auth/authContext';
 import { useLiveQuery } from 'dexie-react-hooks';
-import db, { addToSyncQueue, generateInvoiceNumber } from '@/lib/dexie/db';
+import db, { generateInvoiceNumber } from '@/lib/dexie/db';
+import { TransactionOps, OpenBillOps, CashBookOps } from '@/lib/sync/onlineFirst';
 import { formatRupiah } from '@/utils/currency';
 import { isAfterCutOff, formatDateTime, getTodayString } from '@/utils/date';
 import { printReceipt } from '@/utils/print';
@@ -87,31 +88,20 @@ export default function KasirPage() {
       createdAt: new Date().toISOString(),
     };
 
-    // Save to Dexie
-    await db.transaction('rw', db.transactions, db.transaction_items, db.open_bills, async () => {
-      const localId = await db.transactions.add({ ...transaction, serverId: null });
+    // Online-first: langsung ke Supabase kalau online, offline ke Dexie + sync queue
+    await TransactionOps.create(transaction);
 
-      for (const item of transaction.items) {
-        await db.transaction_items.add({
-          ...item,
-          transactionId: localId,
-          serverId: null,
-        });
-      }
+    // Update open bill ke PAID (online-first)
+    if (editingOpenBill) {
+      await OpenBillOps.markPaid(editingOpenBill.id, editingOpenBill.serverId);
+    }
 
-      if (editingOpenBill) {
-        await db.open_bills.update(editingOpenBill.id, { status: 'PAID' });
-      }
-    });
-
-    await addToSyncQueue('transaction', transactionId, 'CREATE', transaction);
-
-    // Update cash book totals locally
+    // Update totals cash book (online-first)
     if (cashBook && !isGantung) {
       const updates = paymentMethod === 'TUNAI'
         ? { totalCash: (cashBook.totalCash || 0) + total }
         : { totalNonCash: (cashBook.totalNonCash || 0) + total };
-      await db.cash_books.update(cashBook.id, updates);
+      await CashBookOps.updateTotals(cashBook.id, cashBook.serverId, updates);
     }
 
     toast.success(
@@ -121,7 +111,6 @@ export default function KasirPage() {
       { duration: 4000 }
     );
 
-    // Print receipt
     printReceipt(transaction, transaction.items, profile?.name || 'Kasir');
 
     clearCart();
@@ -144,14 +133,8 @@ export default function KasirPage() {
       createdAt: new Date().toISOString(),
     };
 
-    await db.transaction('rw', db.open_bills, db.open_bill_items, async () => {
-      const localId = await db.open_bills.add({ ...openBill, serverId: null });
-      for (const item of openBill.items) {
-        await db.open_bill_items.add({ ...item, openBillId: localId });
-      }
-    });
-
-    await addToSyncQueue('open_bill', openBillId, 'CREATE', openBill);
+    // Online-first: langsung ke Supabase kalau online, offline ke Dexie + sync queue
+    await OpenBillOps.create(openBill);
 
     toast.success(`📋 Open Bill disimpan! ${tableNumber ? `Meja ${tableNumber}` : customerName}`);
     clearCart();

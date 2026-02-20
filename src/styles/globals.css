@@ -22,8 +22,7 @@
   
   body {
     font-family: var(--font-body);
-    background-color: #FDF5E6;
-    color: var(--coffee-900);
+    /* background diatur per-halaman, tidak di sini */
     -webkit-tap-highlight-color: transparent;
   }
 

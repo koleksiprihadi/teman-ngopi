@@ -1,22 +1,23 @@
 // src/hooks/useProducts.js
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import db, { addToSyncQueue } from '@/lib/dexie/db';
-import { v4 as uuidv4 } from 'uuid';
+import db from '@/lib/dexie/db';
+import { ProductOps } from '@/lib/sync/onlineFirst';
 
 export function useProducts() {
-  const products = useLiveQuery(() =>
-    db.products.orderBy('name').toArray()
-  , []);
+  const products = useLiveQuery(
+    () => db.products.orderBy('name').toArray(),
+    []
+  );
 
+  // Sinkronisasi produk dari server ke Dexie saat pertama load
   const fetchFromServer = useCallback(async () => {
-    if (!navigator.onLine) return;
+    if (typeof navigator === 'undefined' || !navigator.onLine) return;
     try {
       const res = await fetch('/api/products');
       if (!res.ok) return;
       const data = await res.json();
-      // Upsert all products locally
       await db.transaction('rw', db.products, async () => {
         for (const p of data) {
           const existing = await db.products.where('serverId').equals(p.id).first();
@@ -28,43 +29,15 @@ export function useProducts() {
         }
       });
     } catch (err) {
-      console.error('Failed to fetch products:', err);
+      console.error('[useProducts] fetchFromServer:', err);
     }
   }, []);
 
-  useEffect(() => {
-    fetchFromServer();
-  }, [fetchFromServer]);
+  useEffect(() => { fetchFromServer(); }, [fetchFromServer]);
 
-  const addProduct = async (productData) => {
-    const id = uuidv4();
-    const newProduct = {
-      ...productData,
-      serverId: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    await db.products.add(newProduct);
-    await addToSyncQueue('product', id, 'CREATE', { ...newProduct, id });
-    return newProduct;
-  };
-
-  const updateProduct = async (localId, updates) => {
-    const product = await db.products.get(localId);
-    const updated = { ...updates, updatedAt: new Date().toISOString() };
-    await db.products.update(localId, updated);
-    if (product?.serverId) {
-      await addToSyncQueue('product', product.serverId, 'UPDATE', { ...product, ...updated, id: product.serverId });
-    }
-  };
-
-  const deleteProduct = async (localId) => {
-    const product = await db.products.get(localId);
-    await db.products.delete(localId);
-    if (product?.serverId) {
-      await addToSyncQueue('product', product.serverId, 'DELETE', { id: product.serverId });
-    }
-  };
+  const addProduct    = (data)            => ProductOps.create(data);
+  const updateProduct = (localId, upd)    => ProductOps.update(localId, upd);
+  const deleteProduct = (localId)         => ProductOps.delete(localId);
 
   const getByCategory = (category) => {
     if (!products) return [];

@@ -136,9 +136,9 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 pt-5 border-t border-white/10">
-            {/* <p className="text-center text-xs text-cream-100/40">
+            <p className="text-center text-xs text-cream-100/40">
               Demo: owner@temanngopi.com / kasir@temanngopi.com
-            </p> */}
+            </p>
           </div>
         </div>
 

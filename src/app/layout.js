@@ -1,5 +1,5 @@
 // src/app/layout.js
-import { Playfair_Display, Nunito } from 'next/font/google';
+import { Playfair_Display, Nunito, Cormorant_Garamond, Jost } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/lib/auth/authContext';
 import PWARegister from '@/components/ui/PWARegister';
@@ -17,18 +17,33 @@ const nunito = Nunito({
   display: 'swap',
 });
 
+// Fonts untuk landing page
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['300', '400', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-cormorant',
+  display: 'swap',
+});
+
+const jost = Jost({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-jost',
+  display: 'swap',
+});
+
 // Next.js 15+: viewport harus export terpisah
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
   themeColor: '#5C3317',
 };
 
 export const metadata = {
-  title: 'Teman Ngopi POS',
-  description: 'Sistem Point of Sale modern untuk Teman Ngopi',
+  title: 'Teman Ngopi',
+  description: 'Kafe outdoor di Pontianak. Kopi pilihan, live musik, suasana terbuka.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -39,13 +54,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id" className={`${playfair.variable} ${nunito.variable}`}>
+    <html
+      lang="id"
+      className={`${playfair.variable} ${nunito.variable} ${cormorant.variable} ${jost.variable}`}
+    >
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="font-body bg-cream-100 min-h-screen antialiased">
+      {/* Tidak ada bg class di body — setiap halaman atur sendiri */}
+      <body className="font-body min-h-screen antialiased">
         <AuthProvider>
           <PWARegister />
           {children}
