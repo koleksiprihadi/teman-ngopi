@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 export async function PATCH(request, { params }) {
   try {
     const { prisma } = await import('@/lib/prisma/client');
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     const data = {};
@@ -43,7 +43,7 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { prisma } = await import('@/lib/prisma/client');
-    const { id } = params;
+    const { id } = await params;
 
     // Cek apakah ada produk yang memakai kategori ini
     const category = await prisma.category.findUnique({ where: { id } });

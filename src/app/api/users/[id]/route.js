@@ -8,7 +8,7 @@ export async function PATCH(request, { params }) {
   try {
     const { prisma } = await import('@/lib/prisma/client');
     const { createServerClient } = await import('@/lib/supabase/client');
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     const prismaUpdates = {};
@@ -44,7 +44,7 @@ export async function DELETE(request, { params }) {
   try {
     const { prisma } = await import('@/lib/prisma/client');
     const { createServerClient } = await import('@/lib/supabase/client');
-    const { id } = params;
+    const { id } = await params;
 
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user) return NextResponse.json({ message: 'Pengguna tidak ditemukan' }, { status: 404 });
